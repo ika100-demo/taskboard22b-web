@@ -10,6 +10,7 @@ tasks:
     covers: [AC-001.1, AC-001.2, AC-001.3, AC-001.4, AC-001.5, AC-001.6, AC-001.7]
     parallel_safe: true
     depends_on: []
+    done: true
   - id: t2
     title: Replace the template start page with the task list and its load error
     files: [app/page.tsx, app/_components/task-list.tsx, app/globals.css, tests/page.test.tsx, e2e/home.spec.ts, e2e/smoke.spec.ts]
