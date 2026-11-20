@@ -1,7 +1,7 @@
 ---
 spec_id: 001-task-list-and-create-form-on-the-start
 title: Task list and create form on the start page
-status: approved
+status: building
 priority: P1
 shape: web-nextjs
 parent: ika100-demo/taskboard22b-gitops:001-persistent-tasks-in-postgres-with-a-web
@@ -140,3 +140,4 @@ The page text is English; the start page `/` is the task page.
 
 - 2026-11-20 created from the system plan, with its criteria (spec 147)
 - 2026-11-20 approved
+- 2026-11-20 building
