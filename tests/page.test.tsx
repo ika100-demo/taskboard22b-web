@@ -1,38 +1,31 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import HomePage from "@/app/page";
 
 describe("HomePage", () => {
-  it("renders the project heading", () => {
-    render(<HomePage />);
-    expect(screen.getByRole("heading", { level: 1, name: "taskboard22b-web" })).toBeInTheDocument();
+  const fetchMock = vi.fn();
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+    vi.stubGlobal("fetch", fetchMock);
+    process.env.TASK_API_URL = "http://task-api.test";
   });
 
-  it("offers the two primary actions", () => {
-    render(<HomePage />);
-    expect(screen.getByRole("link", { name: "Get started" })).toHaveAttribute("href", "#get-started");
-    expect(screen.getByRole("link", { name: "Check health" })).toHaveAttribute("href", "/api/health");
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
-  it("lists what is included as accessible cards", () => {
-    render(<HomePage />);
-    const features = screen.getByRole("region", { name: "What's included" });
-    const items = within(features).getAllByRole("listitem");
-    expect(items.length).toBeGreaterThanOrEqual(5);
-    expect(within(features).getByRole("heading", { level: 3, name: "Health and readiness" })).toBeInTheDocument();
-    expect(within(features).getByRole("heading", { level: 3, name: "Metrics and tracing" })).toBeInTheDocument();
-  });
-
-  it("explains how to get started in order", () => {
-    render(<HomePage />);
-    const steps = within(screen.getByRole("region", { name: "Get started" })).getAllByRole("listitem");
-    expect(steps).toHaveLength(3);
-  });
-
-  it("keeps a single level-1 heading and ordered sections", () => {
-    render(<HomePage />);
+  it("keeps a single level-1 heading named Tasks", async () => {
+    fetchMock.mockResolvedValue(new Response("[]", { status: 200, headers: { "content-type": "application/json" } }));
+    render(await HomePage());
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual(["What's included", "Get started"]);
+    expect(screen.getByRole("heading", { level: 1, name: "Tasks" })).toBeInTheDocument();
+  });
+
+  it("keeps the single heading when the Task API is down", async () => {
+    fetchMock.mockRejectedValue(new TypeError("fetch failed"));
+    render(await HomePage());
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   });
 });
