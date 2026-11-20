@@ -1,7 +1,7 @@
 import { listTasks } from "@/lib/tasks/api";
 import { LOAD_FAILED } from "@/lib/tasks/messages";
 
-import { TaskList } from "./_components/task-list";
+import { TaskBoard } from "./_components/task-board";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,8 @@ export default async function HomePage() {
   return (
     <section className="section">
       <h1 className="section-title">Tasks</h1>
-      {result.ok ? <TaskList tasks={result.tasks} /> : <p role="alert">{LOAD_FAILED}</p>}
+      {!result.ok && <p role="alert">{LOAD_FAILED}</p>}
+      <TaskBoard initialTasks={result.ok ? result.tasks : null} />
     </section>
   );
 }

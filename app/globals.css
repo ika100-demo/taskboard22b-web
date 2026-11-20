@@ -431,6 +431,58 @@ main {
   color: var(--muted);
 }
 
+/* ---------- task form ---------- */
+
+.task-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s-4);
+  margin-top: var(--s-6);
+}
+
+.field {
+  display: grid;
+  gap: var(--s-1);
+}
+
+.field label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.field input {
+  min-height: 2.75rem;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.field input[aria-invalid="true"] {
+  border-color: #dc2626;
+}
+
+.field-error {
+  color: #dc2626;
+  font-size: 0.875rem;
+}
+
+.task-form button {
+  align-self: flex-end;
+}
+
+.task-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.task-form > [role="alert"] {
+  flex-basis: 100%;
+}
+
 /* ---------- empty / error states ---------- */
 
 .state {
