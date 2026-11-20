@@ -77,10 +77,39 @@ describe("start page task list", () => {
   });
 
   it("AC-001.5 gives the GET a 5 second abort signal", async () => {
-    fetchMock.mockResolvedValue(json(200, []));
-    render(await HomePage());
-    const init = fetchMock.mock.calls[0][1];
-    expect(init.signal).toBeInstanceOf(AbortSignal);
+    const controller = new AbortController();
+    const spy = vi.spyOn(AbortSignal, "timeout").mockReturnValue(controller.signal);
+    try {
+      fetchMock.mockResolvedValue(json(200, []));
+      render(await HomePage());
+      expect(spy).toHaveBeenCalledWith(5000);
+      const init = fetchMock.mock.calls[0][1];
+      expect(init.signal).toBe(controller.signal);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("AC-001.5 shows the load error and no list when the GET only ends through its abort signal", async () => {
+    const controller = new AbortController();
+    const spy = vi.spyOn(AbortSignal, "timeout").mockReturnValue(controller.signal);
+    try {
+      fetchMock.mockImplementation(
+        (_url: unknown, init: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () => reject(new DOMException("timed out", "TimeoutError")));
+          }),
+      );
+      const pending = HomePage();
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+      controller.abort();
+      render(await pending);
+      expect(screen.getByRole("alert")).toHaveTextContent(LOAD_FAILED);
+      expect(screen.queryByRole("list", { name: "Tasks" })).not.toBeInTheDocument();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("AC-001.5 still shows the create form when the list cannot be loaded", async () => {

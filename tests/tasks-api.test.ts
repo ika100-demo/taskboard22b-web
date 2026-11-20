@@ -76,10 +76,31 @@ describe("createTaskAction", () => {
     ["422 with a malformed body", () => fetchMock.mockResolvedValue(new Response("not json", { status: 422 }))],
     ["201 with a malformed body", () => fetchMock.mockResolvedValue(json(201, { nope: true }))],
     ["network error", () => fetchMock.mockRejectedValue(new TypeError("fetch failed"))],
-    ["timeout", () => fetchMock.mockRejectedValue(new DOMException("timed out", "TimeoutError"))],
   ])("AC-001.6 maps %s to the save error", async (_n, arrange) => {
     arrange();
     expect(await createTaskAction({ title: "ok", due_date: "" })).toEqual({ kind: "error", field: "form", message: SAVE_FAILED });
+  });
+
+  it("AC-001.6 maps a timeout to the save error, with a 5 second signal that reaches fetch", async () => {
+    const controller = new AbortController();
+    const spy = vi.spyOn(AbortSignal, "timeout").mockReturnValue(controller.signal);
+    try {
+      fetchMock.mockImplementation(
+        (_url: unknown, init: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () => reject(new DOMException("timed out", "TimeoutError")));
+          }),
+      );
+      const pending = createTaskAction({ title: "ok", due_date: "" });
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+      expect(spy).toHaveBeenCalledWith(5000);
+      expect(fetchMock.mock.calls[0][1].signal).toBe(controller.signal);
+      controller.abort();
+      expect(await pending).toEqual({ kind: "error", field: "form", message: SAVE_FAILED });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("AC-001.6 treats an unset TASK_API_URL as unavailable without fetching", async () => {

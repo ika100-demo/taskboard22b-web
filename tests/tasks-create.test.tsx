@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import HomePage from "@/app/page";
@@ -105,6 +105,8 @@ describe("create task form", () => {
     expect(input).toHaveAccessibleDescription(TITLE_INVALID);
     expect(input.value).toBe(value);
     expect(dateInput().value).toBe("2026-12-24");
+    await act(() => new Promise((r) => setTimeout(r, 0)));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(posts()).toHaveLength(0);
     expect(items()).toHaveLength(1);
   });
@@ -163,6 +165,37 @@ describe("create task form", () => {
     expect(items()).toHaveLength(1);
     expect(screen.queryByText(TITLE_INVALID)).not.toBeInTheDocument();
     expect(posts()).toHaveLength(1);
+  });
+
+  it("AC-001.6 gives the POST a 5 second abort signal and shows the save error when it only ends through that signal, without retry", async () => {
+    await openPage();
+    const controller = new AbortController();
+    const spy = vi.spyOn(AbortSignal, "timeout").mockReturnValue(controller.signal);
+    try {
+      fetchMock.mockImplementationOnce(
+        (_url: unknown, init: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () => reject(new DOMException("timed out", "TimeoutError")));
+          }),
+      );
+      fill("Buy milk", "2026-12-24");
+      submit();
+
+      await waitFor(() => expect(posts()).toHaveLength(1));
+      expect(spy).toHaveBeenCalledWith(5000);
+      expect(posts()[0].init.signal).toBe(controller.signal);
+      controller.abort();
+
+      const alert = await within(form()).findByRole("alert");
+      expect(alert).toHaveTextContent(SAVE_FAILED);
+      expect(titleInput().value).toBe("Buy milk");
+      expect(dateInput().value).toBe("2026-12-24");
+      expect(items()).toHaveLength(1);
+      await act(() => new Promise((r) => setTimeout(r, 0)));
+      expect(posts()).toHaveLength(1);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("AC-001.6 can save from the form when the list could not be loaded", async () => {
