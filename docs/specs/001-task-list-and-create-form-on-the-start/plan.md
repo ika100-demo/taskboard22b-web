@@ -2,27 +2,23 @@
 spec_id: 001-task-list-and-create-form-on-the-start
 shape: web-nextjs
 spec_hash: ef71e1d437e2
-summary: Start page lists tasks from the Task API and creates new ones through a server action, with the contract's error messages
+summary: Start page lists tasks from the Task API and creates new ones through a server action, with the contract's error
+  messages
 tasks:
-  - id: t1
-    title: Add the Task API client, title validation and messages in lib/tasks
-    files: [lib/tasks/types.ts, lib/tasks/messages.ts, lib/tasks/validate.ts, lib/tasks/api.ts, docs/env-vars.md]
-    covers: [AC-001.1, AC-001.2, AC-001.3, AC-001.4, AC-001.5, AC-001.6, AC-001.7]
-    parallel_safe: true
-    depends_on: []
-    done: true
-  - id: t2
-    title: Replace the template start page with the task list and its load error
-    files: [app/page.tsx, app/_components/task-list.tsx, app/globals.css, tests/page.test.tsx, e2e/home.spec.ts, e2e/smoke.spec.ts]
-    covers: [AC-001.1, AC-001.5]
-    parallel_safe: true
-    depends_on: [t1]
-  - id: t3
-    title: Add the create form, server action and client-side task board
-    files: [app/actions.ts, app/_components/create-task-form.tsx, app/_components/task-board.tsx, app/page.tsx, app/globals.css, e2e/smoke.spec.ts]
-    covers: [AC-001.2, AC-001.3, AC-001.4, AC-001.6, AC-001.7]
-    parallel_safe: true
-    depends_on: [t2]
+- id: t1
+  title: Add the Task API client, title validation and messages in lib/tasks
+  files: [lib/tasks/types.ts, lib/tasks/messages.ts, lib/tasks/validate.ts, lib/tasks/api.ts, docs/env-vars.md]
+  covers: [AC-001.1, AC-001.2, AC-001.3, AC-001.4, AC-001.5, AC-001.6, AC-001.7]
+  parallel_safe: true
+  depends_on: []
+  done: true
+- id: t3
+  title: Add the create form, server action and client-side task board
+  files: [app/actions.ts, app/_components/create-task-form.tsx, app/_components/task-board.tsx, app/page.tsx, app/globals.css,
+    e2e/smoke.spec.ts, app/_components/task-list.tsx, tests/page.test.tsx, e2e/home.spec.ts]
+  covers: [AC-001.2, AC-001.3, AC-001.4, AC-001.6, AC-001.7, AC-001.1, AC-001.5]
+  parallel_safe: true
+  depends_on: [t1]
 ---
 
 # Plan — 001 Task list and create form on the start page
@@ -47,7 +43,23 @@ See [design.md](design.md) for the binding interfaces (`lib/tasks`, `createTaskA
 
 **Done when:** `devbox run quality` is clean. Unit-level acceptance tests for the mapping and the title rule pass if the testers wrote them against `lib/tasks`. The page-level tests for AC-001.1 to AC-001.7 still wait for t2 and t3.
 
-## t2 — Replace the template start page with the task list and its load error
+## t3 — Add the create form, server action and client-side task board
+
+**Files:** app/actions.ts, app/_components/create-task-form.tsx, app/_components/task-board.tsx, app/page.tsx, app/globals.css, e2e/smoke.spec.ts, app/_components/task-list.tsx, tests/page.test.tsx, e2e/home.spec.ts
+**Covers:** AC-001.2, AC-001.3, AC-001.4, AC-001.6, AC-001.7, AC-001.1, AC-001.5
+**Goal:** The user creates a task from the start page. A valid task is posted on the server and appended to the list without a reload, and the form is emptied. An invalid title, an unavailable Task API or the 10,000 limit each show the spec's message and keep the entered values.
+
+**Implementation notes:**
+- `app/actions.ts`: `"use server"` `createTaskAction` exactly as in design.md. It validates again, turns `""` into `due_date` `null`, and maps the `CreateResult` to the outcome.
+- `task-board.tsx` (`"use client"`): `initialTasks: Task[] | null`, `useState`, renders the form and (when not `null`) `TaskList`, and appends on `onCreated`.
+- `create-task-form.tsx` (`"use client"`): controlled inputs, `noValidate`, no `required`/`maxLength`, and the `onSubmit` + `startTransition` flow from design.md. Show the title error next to the input (`aria-describedby`) and the form error as `role="alert"`. Clear the inputs only on `created`. Disable the button while pending. A thrown error shows SAVE_FAILED.
+- `app/page.tsx`: render `<TaskBoard initialTasks={tasks} />` on success. On load failure render the `LOAD_FAILED` alert plus `<TaskBoard initialTasks={null} />`.
+- `app/globals.css`: form and error styles.
+- `e2e/smoke.spec.ts`: add one `@smoke @writes` test. It creates `smoke-<uuid>` with a due date and expects it in the list after submit, with no reload.
+
+**Done when:** the acceptance tests for AC-001.2, AC-001.3, AC-001.4, AC-001.6 and AC-001.7 pass, the AC-001.1 and AC-001.5 tests still pass, and `devbox run test` (coverage ≥ 80%) and `devbox run quality` are clean.
+
+**Merged from t2 — Replace the template start page with the task list and its load error** (acceptance tests (tasks-api import of app/actions, form on load failure) need the create form of t3; t2 alone cannot go green):
 
 **Files:** app/page.tsx, app/_components/task-list.tsx, app/globals.css, tests/page.test.tsx, e2e/home.spec.ts, e2e/smoke.spec.ts
 **Covers:** AC-001.1, AC-001.5
@@ -64,18 +76,3 @@ See [design.md](design.md) for the binding interfaces (`lib/tasks`, `createTaskA
 
 **Done when:** the acceptance tests for AC-001.1 and AC-001.5 pass, `devbox run test` keeps 80% coverage, and `devbox run quality` is clean.
 
-## t3 — Add the create form, server action and client-side task board
-
-**Files:** app/actions.ts, app/_components/create-task-form.tsx, app/_components/task-board.tsx, app/page.tsx, app/globals.css, e2e/smoke.spec.ts
-**Covers:** AC-001.2, AC-001.3, AC-001.4, AC-001.6, AC-001.7
-**Goal:** The user creates a task from the start page. A valid task is posted on the server and appended to the list without a reload, and the form is emptied. An invalid title, an unavailable Task API or the 10,000 limit each show the spec's message and keep the entered values.
-
-**Implementation notes:**
-- `app/actions.ts`: `"use server"` `createTaskAction` exactly as in design.md. It validates again, turns `""` into `due_date` `null`, and maps the `CreateResult` to the outcome.
-- `task-board.tsx` (`"use client"`): `initialTasks: Task[] | null`, `useState`, renders the form and (when not `null`) `TaskList`, and appends on `onCreated`.
-- `create-task-form.tsx` (`"use client"`): controlled inputs, `noValidate`, no `required`/`maxLength`, and the `onSubmit` + `startTransition` flow from design.md. Show the title error next to the input (`aria-describedby`) and the form error as `role="alert"`. Clear the inputs only on `created`. Disable the button while pending. A thrown error shows SAVE_FAILED.
-- `app/page.tsx`: render `<TaskBoard initialTasks={tasks} />` on success. On load failure render the `LOAD_FAILED` alert plus `<TaskBoard initialTasks={null} />`.
-- `app/globals.css`: form and error styles.
-- `e2e/smoke.spec.ts`: add one `@smoke @writes` test. It creates `smoke-<uuid>` with a due date and expects it in the list after submit, with no reload.
-
-**Done when:** the acceptance tests for AC-001.2, AC-001.3, AC-001.4, AC-001.6 and AC-001.7 pass, the AC-001.1 and AC-001.5 tests still pass, and `devbox run test` (coverage ≥ 80%) and `devbox run quality` are clean.
