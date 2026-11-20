@@ -18,6 +18,9 @@ test("the root page loads at the base URL @smoke", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Tasks" })).toBeVisible();
   await expect(
-    page.getByRole("list", { name: "Tasks" }).or(page.getByText("No tasks yet")).or(page.getByRole("alert")),
+    page
+      .getByRole("list", { name: "Tasks" })
+      .or(page.getByText("No tasks yet"))
+      .or(page.getByText("Tasks cannot be loaded right now. Please try again later.")),
   ).toBeVisible();
 });
