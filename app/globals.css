@@ -398,6 +398,39 @@ main {
   background: linear-gradient(135deg, var(--brand), var(--brand-2));
 }
 
+/* ---------- task list ---------- */
+
+.task-list {
+  display: grid;
+  gap: var(--s-3);
+  margin: var(--s-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task-item {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.task-title {
+  color: var(--text);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.task-empty {
+  margin-top: var(--s-6);
+  color: var(--muted);
+}
+
 /* ---------- empty / error states ---------- */
 
 .state {

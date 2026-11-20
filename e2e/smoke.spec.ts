@@ -7,5 +7,8 @@ test.skip(!process.env.SMOKE_BASE_URL, "SMOKE_BASE_URL not set");
 
 test("the root page loads at the base URL @smoke", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Tasks" })).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: "Tasks" }).or(page.getByText("No tasks yet")).or(page.getByRole("alert")),
+  ).toBeVisible();
 });
